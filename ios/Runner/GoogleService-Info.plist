@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>3944968304-77mvpjbo5cj7abfc2nt26omg02g9oiup.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.3944968304-77mvpjbo5cj7abfc2nt26omg02g9oiup</string>
+	<key>API_KEY</key>
+	<string>AIzaSyCzAOkPrGrWIblGQs0Z0922VPFIAD2e7pY</string>
+	<key>GCM_SENDER_ID</key>
+	<string>3944968304</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>it.ericb.padelApp</string>
+	<key>PROJECT_ID</key>
+	<string>mgm-play</string>
+	<key>STORAGE_BUCKET</key>
+	<string>mgm-play.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:3944968304:ios:61df2944bd9d9c9ff944b5</string>
+	<key>DATABASE_URL</key>
+	<string>https://mgm-play.firebaseio.com</string>
+</dict>
+</plist>
