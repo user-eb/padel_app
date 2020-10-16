@@ -15,7 +15,7 @@ class ChatProvider extends BaseChatProvider {
   final FirebaseFirestore fireStoreDb;
   StreamController<List<Conversation>> conversationStreamController;
   ChatProvider({FirebaseFirestore fireStoreDb})
-      : fireStoreDb = fireStoreDb ?? FirebaseFirestore.instance.enablePersistence();
+      : fireStoreDb = fireStoreDb ?? FirebaseFirestore.instance;
 
   @override
   Stream<List<Conversation>> getConversations()  {

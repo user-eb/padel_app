@@ -1,25 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-
 import 'config/Styles.dart';
 import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/material.dart';
+import 'package:downloads_path_provider/downloads_path_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:padel_app/blocs/attachments/AttachmentsBloc.dart';
+import 'package:padel_app/blocs/chats/Bloc.dart';
+import 'package:padel_app/blocs/config/Bloc.dart';
+import 'package:padel_app/blocs/contacts/Bloc.dart';
+import 'package:padel_app/blocs/home/Bloc.dart';
+import 'package:padel_app/config/Constants.dart';
+import 'package:padel_app/config/Themes.dart';
+import 'package:padel_app/pages/HomePage.dart';
+import 'package:padel_app/repositories/AuthenticationRepository.dart';
+import 'package:padel_app/repositories/ChatRepository.dart';
+import 'package:padel_app/repositories/StorageRepository.dart';
+import 'package:padel_app/repositories/UserDataRepository.dart';
+import 'package:padel_app/utils/SharedObjects.dart';
+import 'package:path_provider/path_provider.dart';
+import 'blocs/authentication/Bloc.dart';
+import 'pages/RegisterPage.dart';
 
-void main() {
+void main() async {
+  initSharedObjAndConstants();
+
   runApp(
     MaterialApp(
-      home: StartFlutterFire(),
+      home: InitFlutterFire(),
     ),
   );
 }
 
-class StartFlutterFire extends StatefulWidget {
-  _StartFlutterFireState createState() => _StartFlutterFireState();
+void initSharedObjAndConstants() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  SharedObjects.prefs = await CachedSharedPreferences.getInstance();
+  Constants.cacheDirPath = (await getTemporaryDirectory()).path;
+  Constants.downloadsDirPath =
+      (await DownloadsPathProvider.downloadsDirectory).path;
 }
 
-class _StartFlutterFireState extends State<StartFlutterFire> {
-  // Set default `_initialized` and `_error` state to false
+class InitFlutterFire extends StatefulWidget {
+  @override
+  _InitFlutterFireState createState() => _InitFlutterFireState();
+}
+
+class _InitFlutterFireState extends State<InitFlutterFire> {
   bool _initialized = false;
   bool _error = false;
 
@@ -47,7 +73,7 @@ class _StartFlutterFireState extends State<StartFlutterFire> {
 
   @override
   Widget build(BuildContext context) {
-    // Show error message if initialization failed
+    //Show error message if initialization failed
     if (_error) {
       return Scaffold(
         body: SafeArea(
@@ -68,7 +94,76 @@ class _StartFlutterFireState extends State<StartFlutterFire> {
       );
     }
 
-    return StartFCM();
+    return PadelApp();
+  }
+}
+
+class PadelApp extends StatefulWidget {
+  @override
+  _PadelAppState createState() => _PadelAppState();
+}
+
+class _PadelAppState extends State<PadelApp> {
+  ThemeData theme;
+  Key key = UniqueKey();
+
+  final AuthenticationRepository authRepository = AuthenticationRepository();
+  final UserDataRepository userDataRepository = UserDataRepository();
+  final StorageRepository storageRepository = StorageRepository();
+  final ChatRepository chatRepository = ChatRepository();
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthenticationBloc>(
+          create: (context) => AuthenticationBloc(
+              authRepository, userDataRepository, storageRepository)
+            ..add(AppLaunched()),
+        ),
+        BlocProvider<ContactsBloc>(
+          create: (context) => ContactsBloc(userDataRepository, chatRepository),
+        ),
+        BlocProvider<ChatBloc>(
+          create: (context) => ChatBloc(
+            chatRepository,
+            userDataRepository,
+            storageRepository,
+          ),
+        ),
+        BlocProvider<AttachmentsBloc>(
+          create: (context) => AttachmentsBloc(chatRepository),
+        ),
+        BlocProvider<HomeBloc>(
+          create: (context) => HomeBloc(chatRepository),
+        ),
+        BlocProvider<ConfigBloc>(
+          create: (context) =>
+              ConfigBloc(userDataRepository, storageRepository),
+        )
+      ],
+      child: BlocBuilder<ConfigBloc, ConfigState>(builder: (context, state) {
+        if (state is UnConfigState) {
+          theme = SharedObjects.prefs.getBool(Constants.configDarkMode)
+              ? Themes.dark
+              : Themes.light;
+        }
+        if (state is RestartedAppState) {
+          key = UniqueKey();
+        }
+        if (state is ConfigChangeState &&
+            state.key == Constants.configDarkMode) {
+          theme = state.value ? Themes.dark : Themes.light;
+        }
+
+        return MaterialApp(
+            title: 'PadelApp',
+            theme: theme,
+            key: key,
+            debugShowCheckedModeBanner: false,
+            home: StartFCM());
+      }),
+    );
   }
 }
 
@@ -155,11 +250,7 @@ class StartFCM extends StatefulWidget {
 
 class _StartFCMState extends State<StartFCM> {
   String _homeScreenText = "Waiting for token...";
-  bool _topicButtonsDisabled = false;
-
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
-  final TextEditingController _topicController =
-      TextEditingController(text: 'topic');
 
   Widget _buildDialog(BuildContext context, Item item) {
     return AlertDialog(
@@ -236,58 +327,18 @@ class _StartFCMState extends State<StartFCM> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
-  final String title;
-
-  @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-     _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    return BlocBuilder<AuthenticationBloc, AuthenticationState>(
+      builder: (context, state) {
+        if (state is UnAuthenticated) {
+          return RegisterPage();
+        } else if (state is ProfileUpdated) {
+          if (SharedObjects.prefs.getBool(Constants.configMessagePaging))
+            BlocProvider.of<ChatBloc>(context).add(FetchChatListEvent());
+          return HomePage();
+        } else {
+          return RegisterPage();
+        }
+      },
     );
   }
 }
